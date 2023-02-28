@@ -1,0 +1,4 @@
+move(N,X,Y,Z) :- X = [aoba, 2] + a(1.2) - 1. 
+move(N,X,Y,Z) :- [_, 2] = [1, 2].
+
+move(N,X,Y,Z) :- kew(1,1) >= 1.
