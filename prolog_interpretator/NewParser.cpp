@@ -9,19 +9,13 @@ std::string InputString;
 
 std::vector<Token> Tokens;
 
-std::string Operators[]
-{
-	"Unification",
-	"CutOperator",
-};
-
 std::string ArithmeticOperators[]
 {
 	"Divide",
 	"Plus",
 	"Minus",
 	"Div",
-	"Multi"
+	"Multi",
 	"Mod"
 };
 
@@ -68,7 +62,6 @@ void Sentence()
 {
 	bool IsFactSign = false;
 	bool IsRuleSign = false;
-	bool IsRuleBody = false;
 
 	Header();
 
@@ -90,60 +83,81 @@ void Sentence()
 
 	GetNextToken();
 
-	IsRuleBody = RuleBody();
+	RuleBody();
+}
 
-	if (!IsRuleBody)
+void Term()
+{
+	bool IsNumber = false;
+	bool IsAtom = false;
+	bool IsOpenBracket = false;
+	bool IsVariable = false;
+
+	IsNumber = Number();
+
+	if (IsNumber)
 	{
-		Error("Parser recevied error token in the rule's body");
+		GetNextToken();
+
+		return;
 	}
+
+	IsVariable = Variable();
+
+	if (IsVariable)
+	{
+		GetNextToken();
+
+		return;
+	}
+
+	IsAtom = Atom();
+
+	if (IsAtom)
+	{
+		GetNextToken();
+
+		bool IsOpenParenthesis = OpenParenthesis();
+
+		if (!IsOpenParenthesis)
+		{
+			return; // It's Atom
+		}
+
+		Structure();
+
+		return;
+	}
+
+	IsOpenBracket = OpenBracket();
+
+	if (IsOpenBracket)
+	{
+		List();
+
+		GetNextToken();
+
+		return;
+	}
+
+	Error("Invalid Term token\nToken type: " + CurrentToken.type + " " + CurrentToken.value);
 }
 
 void Header()
 {
-	bool IsStructure = false;
-
-	IsStructure = Structure();
-
-	if (IsStructure)
-	{
-		return;
-	}
-
-	Error("Parser recevied error sign in a structure");
+	Structure();
 }
 
-bool Structure()
+void Structure()
 {
-	bool IsAtom = false;
 	bool IsOpenParanthesis = false;
 	bool IsCloseParanthesis = false;
 	bool IsComma = false;
 	bool IsTerm = false;
 
-	IsAtom = Atom();
-
-	if (!IsAtom)
-	{
-		return false;
-	}
-
 	GetNextToken();
 
-	IsOpenParanthesis = OpenParenthesis();
-
-	if (!IsOpenParanthesis)
-	{
-		return false;
-	}
-
-	GetNextToken();
-
-	IsTerm = Term();
-
-	if (!IsTerm)
-	{
-		return false;
-	}
+	Term();
 
 	bool IsTermsEnd = false;
 
@@ -153,7 +167,6 @@ bool Structure()
 
 		if (IsCloseParanthesis)
 		{
-			IsTermsEnd = true;
 			break;
 		}
 
@@ -161,38 +174,112 @@ bool Structure()
 
 		if (!IsComma)
 		{
-			return false;
+			Error("Invalid comma token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
 		GetNextToken();
 
-		IsTerm = Term();
-
-		if (!IsTerm)
-		{
-			return false;
-		}
+		Term();
 	}
 
-	return true;
+	return;
 }
 
-bool RuleBody()
+void List()
 {
-	bool IsTarget = false;
-	bool IsComma = false;
-	bool IsDot = false;
+	bool IsOpenBracket = false;
+	bool IsCloseBracket = false;
+	bool IsListHeader = false;
+	bool IsVerticalBar = false;
+	bool IsTerm = false;
 
-	IsTarget = Target();
+	IsOpenBracket = OpenBracket();
 
-	if (!IsTarget)
+	if (!IsOpenBracket)
 	{
-		return false;
+		Error("Invalid list's open bracket token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+	}
+
+	IsCloseBracket = CloseBracket();
+
+	// Empty list
+
+	if (IsCloseBracket)
+	{
+		return;
 	}
 
 	GetNextToken();
 
-	while (!IsDot)
+	ListHeader();
+
+	GetNextToken();
+
+	IsCloseBracket = CloseBracket();
+
+	// Check simple list
+
+	if (IsCloseBracket)
+	{
+		return;
+	}
+
+	// Check list's tail
+
+	IsVerticalBar = VerticalBar();
+
+	if (!IsVerticalBar)
+	{
+		Error("Invalid list's vertical bar token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+	}
+
+	GetNextToken();
+	
+	Term();
+
+	IsCloseBracket = CloseBracket();
+
+	if (!IsCloseBracket)
+	{
+		Error("Invalid list's close bracket token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+	}
+
+	return;
+}
+
+void ListHeader()
+{
+	bool IsComma = true;
+
+	Term();
+
+	while (true)
+	{
+		IsComma = Comma();
+		
+		if (!IsComma)
+		{
+			break;
+		}
+
+		GetNextToken();
+		
+		Term();
+	}
+
+	return;
+}
+
+void RuleBody()
+{
+	bool IsComma = false;
+	bool IsDot = false;
+
+	Target();
+
+	//GetNextToken();
+
+	while (true)
 	{
 		IsDot = Dot();
 
@@ -205,245 +292,155 @@ bool RuleBody()
 
 		if(!IsComma)
 		{
-			return false;
+			Error("Invalid comma token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
 		GetNextToken();
 		
-		IsTarget = Target();
+		Target();
 
-		if (IsTarget)
+		IsDot = Dot();
+
+		if (IsDot)
 		{
-			GetNextToken();
-
-			continue;
+			break;
 		}
 
-		return false;
+		GetNextToken();
 	}
 
-	return true;
+	return;
 }
 
-bool Term()
+void Target() 
 {
-	bool IsNumber = false;
-	bool IsList = false;
-	bool IsAtom = false;
-	bool IsStructure = false;
-	bool IsOpenBracket = false;
+	bool IsCutUperator = CutOperator();
 
-	IsNumber = Number();
+	if (IsCutUperator)
+	{
+		GetNextToken();
+
+		return;
+	}
+
+	bool IsAtom = Atom();
+
+	if (IsAtom)
+	{
+		GetNextToken();
+
+		bool IsOpenParenthesis = OpenParenthesis();
+		
+		if (!IsOpenParenthesis)
+		{
+			Error("Invalid target's structure token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+		}
+
+		Structure();
+		
+		return;
+	}
+
+	bool IsVariable = Variable();
+	bool IsNumber = Number();
+
+	if (!IsVariable && !IsNumber)
+	{
+		Error("Invalid target it is not Cut, Struct or Expression: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+	}
+
+	Expression();
+
+	// mb get token
+}
+
+void Expression()
+{
+	CalculationArithmeticExpression();
+	
+	// Сравнение
+
+	// 1 проходит, а во 2 вылетают ошибки
+}
+
+void ArithmeticExpression()
+{
+	bool IsVariable = Variable();
+
+	if (IsVariable)
+	{
+		GetNextToken();
+
+		bool IsArithmeticOperator = ArithmeticOperator();
+
+		if (!IsArithmeticOperator)
+		{
+			Error("Invalid token at arithmetic operator\nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+		}
+
+		GetNextToken();
+
+		ArithmeticExpression();
+
+		return;
+	}
+
+	bool IsNumber = Number();
 
 	if (IsNumber)
 	{
 		GetNextToken();
 
-		return true;
-	}
+		bool IsArithmeticOperator = ArithmeticOperator();
 
-	IsOpenBracket = OpenBracket();
-
-	if (IsOpenBracket)
-	{
-		IsList = List();
-
-		if (!IsList)
+		if (!IsArithmeticOperator)
 		{
-			return false;
-		}
-
-		return true;
-	}
-
-	IsAtom = Atom();
-
-	if (IsAtom)
-	{
-		GetNextToken();
-
-		bool IsOpenParethesis = OpenParenthesis();
-
-		if (IsOpenParethesis)
-		{
-			IsStructure = Structure();
-
-			if (!IsStructure)
-			{
-				return false;
-			}
-
-			return true;
-		}
-
-		return true; // It's atom
-	}
-
-	return false;
-}
-
-bool List()
-{
-	bool IsOpenBracket = false;
-	bool IsCloseBracket = false;
-	bool IsListHeader = false;
-	bool IsVerticalBar = false;
-	bool IsTerm = false;
-
-	IsOpenBracket = OpenBracket();
-
-	if (!IsOpenBracket)
-	{
-		return false;
-	}
-
-	IsCloseBracket = CloseBracket();
-
-	// Empty list
-
-	if (IsCloseBracket)
-	{
-		return true;
-	}
-
-	GetNextToken();
-
-	IsListHeader = ListHeader();
-
-	if (!IsListHeader)
-	{
-		return false;
-	}
-
-	GetNextToken();
-
-	IsCloseBracket = CloseBracket();
-
-	// Check simple list
-
-	if (IsCloseBracket)
-	{
-		return true;
-	}
-
-	// Check list's tail
-
-	IsVerticalBar = VerticalBar();
-
-	if (!IsVerticalBar)
-	{
-		return false;
-	}
-
-	GetNextToken();
-
-	IsTerm = Term();
-
-	if (!IsTerm)
-	{
-		return false;
-	}
-
-	GetNextToken();
-
-	IsCloseBracket = CloseBracket();
-
-	if (!IsCloseBracket)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool ListHeader()
-{
-	bool IsTerm = true;
-	bool IsComma = true;
-
-	IsTerm = Term();
-
-	if (!IsTerm)
-	{
-		return false;
-	}
-
-	while (true)
-	{
-		IsComma = Comma();
-		
-		if (!IsComma)
-		{
-			return false;
+			return; // Это число
 		}
 
 		GetNextToken();
-		
-		IsTerm = Term();
 
-		if (IsTerm)
+		IsVariable = Variable();
+
+		if (!IsVariable)
 		{
-			GetNextToken();
+			ArithmeticExpression();
 
-			continue;
+			return;
 		}
-		
-		return false;
+
+		return;
 	}
 
-	return true;
+	Error("Invalid token in arithmetic expression \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 }
 
-bool Expression()
+void CalculationArithmeticExpression()
 {
-	bool IsAtom = false;
-	bool IsNumber = false;
-	bool IsArithmetic = false;
-	
+	bool IsVariable = Variable();
+	bool IsNumber = Number();
 
-	IsAtom = Atom();
-
-	if (IsAtom)
+	if (IsVariable || IsNumber)
 	{
+		GetNextToken();
 
-	}
+		bool IsCalculationOperator = IsOperator();
 
-	IsNumber = Number();
-
-	if (IsNumber)
-	{
-
-	}
-
-	return false;
-}
-
-bool ArithmeticExpression()
-{
-
-}
-
-bool Target()
-{
-	bool IsAtom = false;
-	bool IsStructure = false;
-	bool IsExpression = false;
-
-	IsAtom = Atom();
-
-	if (IsAtom)
-	{
-		IsStructure = Structure();
-
-		if (IsStructure)
+		if (!IsCalculationOperator)
 		{
-			return true;
+			return;
 		}
 	}
 
-	
-	return true;
+	Error("Invalid token in calculation arithmetic expression \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 }
+
+void LogicalExpression()
+{
+
+}
+
+
 
 bool Dot()
 {
@@ -525,6 +522,16 @@ bool Atom()
 	return true;
 }
 
+bool Variable()
+{
+	if (CurrentToken.type != "Variable")
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool Number()
 {
 	if (CurrentToken.type != "Number")
@@ -535,9 +542,19 @@ bool Number()
 	return true;
 }
 
+bool CutOperator()
+{
+	if (CurrentToken.type != "CutOperator")
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool ArithmeticOperator()
 {
-	for (int i = 0; i < sizeof(ArithmeticOperators); i++)
+	for (int i = 0; i < sizeof(ArithmeticOperators) / sizeof(ArithmeticOperators[0]); i++)
 	{
 		if (CurrentToken.type == ArithmeticOperators[i])
 		{
@@ -550,7 +567,7 @@ bool ArithmeticOperator()
 
 bool LogicOperator()
 {
-	for (int i = 0; i < sizeof(LogicOperators); i++)
+	for (int i = 0; i < sizeof(LogicOperators) / sizeof(LogicOperators[0]); i++)
 	{
 		if (CurrentToken.type == LogicOperators[i])
 		{
@@ -570,6 +587,18 @@ bool RuleSign()
 
 	return true;
 }
+
+bool IsOperator()
+{
+	if (CurrentToken.type != "Is")
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
 
 void GetNextToken()
 {

@@ -2,7 +2,7 @@ professor(X, Y) :-
 teaches(X, C), studies(Y, C). 
         
 move(N,X,Y,Z) :- 
-	   raz_dva_tri(1) is aboba(123), 	   
+	   M is A, 	   
 	   move(zalupka(123.123),[1 , 2 | 2],Z, 123), 
 	   !, 
          move(M,Z,Y,X), 

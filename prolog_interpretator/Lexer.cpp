@@ -69,15 +69,29 @@ std::string ReadLetter(std::string string)
 			return tmp;
 		}
 	}
-	else if (string[currentChar] == '_')
+	else if (isupper(string[currentChar]) || string[currentChar] == '_')
 	{
-		IncreaseCurrentChar();
-		return "_" + ReadAtom(string, 0);
+		return ReadVariable(string);
 	}
 	else
 	{
 		return ReadAtom(string, 0);
 	}
+}
+
+std::string ReadVariable(std::string string)
+{
+	std::string result;
+
+	result += string[currentChar++];
+
+	while (isdigit(string[currentChar]) || (isalpha(string[currentChar]) && islower(string[currentChar])))
+	{
+		result += string[currentChar];
+		currentChar++;
+	}
+
+	return result;
 }
 
 std::string ReadAtom(std::string string, int mode)
@@ -192,7 +206,6 @@ bool CheckNextChar(std::string string, char nextChar)
 		return false;
 	}
 	else
-
 	{
 		return string[currentNumber + 1] == nextChar;
 	}
@@ -243,8 +256,6 @@ Token CreateWord(std::string string)
 	}
 }
 
-
-
 Token GetToken(std::string string)
 {
 	// Терм - константы(атом или число), переменные, структуры(сложные термы) 
@@ -286,7 +297,17 @@ Token GetToken(std::string string)
 		}
 		else if (isalpha(string[currentChar]))						// буква
 		{
-			return CreateWord(string);
+			if (string[currentChar] == '_')
+			{
+				std::string variable = ReadLetter(string);
+				
+				return CreateToken("Variable", variable);
+			}
+
+			if (isupper(string[currentChar]) == false)
+			{
+				return CreateWord(string);
+			}
 		}
 
 
@@ -317,23 +338,40 @@ Token GetToken(std::string string)
 					IncreaseCurrentChar();
 					return CreateToken("LessOrEqual", "=<");
 				}
-				// ==
-				if (CheckNextChar(string, '='))
+				//// ==
+				//if (CheckNextChar(string, '='))
+				//{
+				//	IncreaseCurrentChar();
+				//	if (CheckNextChar(string, '=') == false)
+				//	{
+				//		IncreaseCurrentChar();
+				//		return CreateToken("Equal", "==");
+				//	}
+				//	else
+				//	{
+				//		//Atom
+				//		std::string tmp = "=";
+
+				//		tmp += ReadAtom(string, 1);
+				//		return CreateToken("Atom", tmp);
+				//	}
+				//}
+
+				//=:=
+				if (CheckNextChar(string, ':'))
 				{
 					IncreaseCurrentChar();
-					if (CheckNextChar(string, '=') == false)
+
+					if (CheckNextChar(string, '='))
 					{
 						IncreaseCurrentChar();
-						return CreateToken("Equal", "==");
+						return CreateToken("Equal", "=:=");
 					}
-					else
-					{
-						//Atom
-						std::string tmp = "=";
 
-						tmp += ReadAtom(string, 1);
-						return CreateToken("Atom", tmp);
-					}
+					std::string tmp = "=:";
+
+					tmp += ReadAtom(string, 1);
+					return CreateToken("Atom", tmp);
 				}
 				
 			}
