@@ -1,9 +1,11 @@
 #include "NewParser.h";
 #include "Lexer.h"
-#include "AST.h"
+#include "NewAST.h"
 
 Token PreviousToken;
 Token CurrentToken;
+
+AST Tree;
 
 std::string InputString;
 
@@ -33,10 +35,16 @@ std::string LogicOperators[]
 
 void StartAnalysis(std::string str)
 {
+	Tree = AST();
+
 	InputString = str;
 	GetNextToken();
 
+	Tree.AddRoot(new Root("Programm"));
+
 	Program();
+
+	Tree.PrintTree();
 }
 
 void Program()
@@ -46,7 +54,11 @@ void Program()
 
 	while (!IsProgramEnd)
 	{
+		Tree.AddChildren(new Node("PrologSentence", Tree.CurrentNode));
+
 		Sentence();
+
+		Tree.ReturnToParent();
 
 		//Check EOF
 		GetNextToken();
@@ -63,7 +75,11 @@ void Sentence()
 	bool IsFactSign = false;
 	bool IsRuleSign = false;
 
+	Tree.AddChildren(new Node("Header", Tree.CurrentNode));
+
 	Header();
+	
+	Tree.ReturnToParent();
 
 	GetNextToken();
 
@@ -71,6 +87,9 @@ void Sentence()
 
 	if (IsFactSign)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		return;
 	}
 
@@ -81,9 +100,16 @@ void Sentence()
 		Error("Parser recevied not fact's and not rule's sign");
 	}
 
+	Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+	Tree.ReturnToParent();
+
 	GetNextToken();
 
+	Tree.AddChildren(new Node("RuleBody", Tree.CurrentNode));
+
 	RuleBody();
+
+	Tree.ReturnToParent();
 }
 
 void Term()
@@ -97,6 +123,9 @@ void Term()
 
 	if (IsNumber)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 
 		return;
@@ -106,6 +135,9 @@ void Term()
 
 	if (IsVariable)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 
 		return;
@@ -115,18 +147,30 @@ void Term()
 
 	if (IsAtom)
 	{
+		Token atomToken = CurrentToken;
+
 		GetNextToken();
 
 		bool IsOpenParenthesis = OpenParenthesis();
 
 		if (!IsOpenParenthesis)
 		{
+			Tree.AddChildren(new Leaf(atomToken.type, atomToken.value, Tree.CurrentNode));
+			Tree.ReturnToParent();
+
 			return; // It's Atom
 		}
 
-		bool callFromHeader = false;
+		Tree.AddChildren(new Node("Structure", Tree.CurrentNode));
+		Tree.AddChildren(new Leaf(atomToken.type, atomToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+
+		bool callFromHeader = false; // It's structure
 
 		Structure(false);
+
+		Tree.ReturnToParent();
 
 		GetNextToken();
 
@@ -137,7 +181,13 @@ void Term()
 
 	if (IsOpenBracket)
 	{
+		Tree.AddChildren(new Node("List", Tree.CurrentNode));
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		List();
+
+		Tree.ReturnToParent();
 
 		GetNextToken();
 
@@ -150,6 +200,8 @@ void Term()
 void Header()
 {
 	bool callFromHeader = true;
+
+	Tree.AddChildren(new Node("Structure", Tree.CurrentNode));
 
 	Structure(callFromHeader);
 }
@@ -170,6 +222,8 @@ void Structure(bool callFromHeader)
 			Error("Invalid atom token in the structure: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+
 		GetNextToken();
 
 		IsOpenParanthesis = OpenParenthesis();
@@ -178,11 +232,21 @@ void Structure(bool callFromHeader)
 		{
 			Error("Invalid parenthesis token in the structure: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
+
+		Tree.ReturnToParent();
+
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+
+		Tree.ReturnToParent();
 	}
 
 	GetNextToken();
 
+	Tree.AddChildren(new Node("Term", Tree.CurrentNode));
+
 	Term();
+
+	Tree.ReturnToParent();
 
 	bool IsTermsEnd = false;
 
@@ -192,6 +256,9 @@ void Structure(bool callFromHeader)
 
 		if (IsCloseParanthesis)
 		{
+			Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+			Tree.ReturnToParent();
+
 			break;
 		}
 
@@ -202,10 +269,16 @@ void Structure(bool callFromHeader)
 			Error("Invalid comma token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
+
+		Tree.AddChildren(new Node("Term", Tree.CurrentNode));
 
 		Term();
 
+		Tree.ReturnToParent();
 	}
 
 	return;
