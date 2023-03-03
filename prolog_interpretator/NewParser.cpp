@@ -124,7 +124,11 @@ void Term()
 			return; // It's Atom
 		}
 
-		Structure();
+		bool callFromHeader = false;
+
+		Structure(false);
+
+		GetNextToken();
 
 		return;
 	}
@@ -145,15 +149,36 @@ void Term()
 
 void Header()
 {
-	Structure();
+	bool callFromHeader = true;
+
+	Structure(callFromHeader);
 }
 
-void Structure()
+void Structure(bool callFromHeader)
 {
 	bool IsOpenParanthesis = false;
 	bool IsCloseParanthesis = false;
 	bool IsComma = false;
 	bool IsTerm = false;
+
+	if (callFromHeader)
+	{
+		bool IsAtom = Atom();
+
+		if (!IsAtom)
+		{
+			Error("Invalid atom token in the structure: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+		}
+
+		GetNextToken();
+
+		IsOpenParanthesis = OpenParenthesis();
+
+		if (!IsOpenParanthesis)
+		{
+			Error("Invalid parenthesis token in the structure: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+		}
+	}
 
 	GetNextToken();
 
@@ -180,6 +205,7 @@ void Structure()
 		GetNextToken();
 
 		Term();
+
 	}
 
 	return;
@@ -212,8 +238,6 @@ void List()
 	GetNextToken();
 
 	ListHeader();
-
-	GetNextToken();
 
 	IsCloseBracket = CloseBracket();
 
@@ -249,11 +273,11 @@ void List()
 
 void ListHeader()
 {
-	bool IsComma = true;
+	bool IsComma = false;
 
 	Term();
 
-	while (true)
+	while (!IsComma)
 	{
 		IsComma = Comma();
 		
@@ -265,6 +289,8 @@ void ListHeader()
 		GetNextToken();
 		
 		Term();
+
+		IsComma = Comma();
 	}
 
 	return;
@@ -277,7 +303,14 @@ void RuleBody()
 
 	Target();
 
-	//GetNextToken();
+	IsComma = Comma();
+	IsDot = Dot();
+
+	if (!IsComma && !IsDot)
+	{
+		GetNextToken();
+	}
+
 
 	while (true)
 	{
@@ -300,13 +333,17 @@ void RuleBody()
 		Target();
 
 		IsDot = Dot();
+		IsComma = Comma();
 
 		if (IsDot)
 		{
 			break;
 		}
 
-		GetNextToken();
+		if (!IsComma)
+		{
+			GetNextToken();
+		}
 	}
 
 	return;
@@ -336,7 +373,9 @@ void Target()
 			Error("Invalid target's structure token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
-		Structure();
+		bool callFromHeader = false;
+
+ 		Structure(callFromHeader);
 		
 		return;
 	}
@@ -356,11 +395,26 @@ void Target()
 
 void Expression()
 {
-	CalculationArithmeticExpression();
-	
-	// Сравнение
+	bool isOperator = false;
 
-	// 1 проходит, а во 2 вылетают ошибки
+	CalculationArithmeticExpression(isOperator);
+	
+	if (!isOperator)
+	{
+		LogicExpression(isOperator);
+
+		return;
+	}
+
+	bool IsDot = Dot();
+	bool IsComma = Comma();
+
+	if (!IsDot && !IsComma)
+	{
+		LogicExpression(!isOperator);
+	}
+
+	return;
 }
 
 void ArithmeticExpression()
@@ -415,7 +469,7 @@ void ArithmeticExpression()
 	Error("Invalid token in arithmetic expression \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 }
 
-void CalculationArithmeticExpression()
+void CalculationArithmeticExpression(bool& isOperator)
 {
 	bool IsVariable = Variable();
 	bool IsNumber = Number();
@@ -428,16 +482,70 @@ void CalculationArithmeticExpression()
 
 		if (!IsCalculationOperator)
 		{
+			isOperator = false;
 			return;
 		}
+
+		GetNextToken();
+		
+		ArithmeticExpression();
+
+		bool IsDot = Dot();
+		bool IsComma = Comma();
+
+		isOperator = true;
+
+		if (!IsDot && !IsComma)
+		{
+			GetNextToken();
+		}
+
+		return;
 	}
 
 	Error("Invalid token in calculation arithmetic expression \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 }
 
-void LogicalExpression()
+void LogicExpression(bool isOperator)
 {
+	if (!isOperator) // В вычислении а.в. нет is
+	{
+		if (PreviousToken.type == "Variable" || PreviousToken.type == "Number")
+		{
+			bool IsArithemeticOperator = ArithmeticOperator();
 
+			if (IsArithemeticOperator)
+			{
+				GetNextToken();
+
+				bool IsNumber = Number();
+				bool IsVariable = Variable();
+
+				if (!IsNumber && !IsVariable)
+				{
+					Error("Invalid token in logic expression: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+				}
+
+				ArithmeticExpression();
+			}
+		}
+	}
+	else
+	{
+		ArithmeticExpression();
+		GetNextToken();
+	}
+
+	bool IsLogicOperator = LogicOperator();
+
+	if (!IsLogicOperator)
+	{
+		Error("Invalid token in logic operator \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
+	}
+
+	GetNextToken();
+
+	ArithmeticExpression();
 }
 
 

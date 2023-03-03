@@ -85,7 +85,7 @@ std::string ReadVariable(std::string string)
 
 	result += string[currentChar++];
 
-	while (isdigit(string[currentChar]) || (isalpha(string[currentChar]) && islower(string[currentChar])))
+	while (isdigit(string[currentChar]) || string[currentChar] == '_' || (isalpha(string[currentChar]) && islower(string[currentChar])))
 	{
 		result += string[currentChar];
 		currentChar++;
@@ -174,6 +174,7 @@ std::string ReadNumber(std::string string, bool &isAtom, bool isMinus)
 
 		word += string[currentChar];
 		currentChar++;
+
 		if (isalpha(string[currentChar]) || string[currentChar] == '_')
 		{
 			isNumber = false;
@@ -297,7 +298,7 @@ Token GetToken(std::string string)
 		}
 		else if (isalpha(string[currentChar]))						// буква
 		{
-			if (string[currentChar] == '_')
+			if (string[currentChar] == '_' || isupper(string[currentChar]) == true)
 			{
 				std::string variable = ReadLetter(string);
 				
@@ -364,6 +365,7 @@ Token GetToken(std::string string)
 
 					if (CheckNextChar(string, '='))
 					{
+						IncreaseCurrentChar();
 						IncreaseCurrentChar();
 						return CreateToken("Equal", "=:=");
 					}
@@ -517,7 +519,7 @@ Token GetToken(std::string string)
 
 			case '+':
 			{
-				if (CheckNextChar(string, ' ') || isdigit(string[currentChar + 1]) || CheckNextChar(string, '\0')  
+				if (CheckNextChar(string, ' ') || isalpha(string[currentChar + 1]) || isdigit(string[currentChar + 1]) || CheckNextChar(string, '\0')
 					|| CheckNextChar(string, '.') || CheckNextChar(string, ','))
 				{
 					IncreaseCurrentChar();

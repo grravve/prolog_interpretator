@@ -14,7 +14,7 @@ void StartAnalysis(std::string str);
 
 void Program();
 void Sentence();
-void Structure();
+void Structure(bool);
 void Header();
 bool Dot();
 bool Atom();
@@ -39,7 +39,7 @@ bool LogicOperator();
 bool ArithmeticOperator();
 bool CutOperator();
 void ArithmeticExpression();
-void CalculationArithmeticExpression();
-void LogicalExpression();
+void CalculationArithmeticExpression(bool&);
+void LogicExpression(bool);
 
 #endif

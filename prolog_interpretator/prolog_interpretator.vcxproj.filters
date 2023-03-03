@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AST.h">
-      <Filter>Файлы ресурсов</Filter>
-    </ClInclude>
     <ClInclude Include="Lexer.h">
       <Filter>Файлы ресурсов</Filter>
     </ClInclude>
@@ -27,11 +24,11 @@
     <ClInclude Include="Tokens.h">
       <Filter>Файлы ресурсов</Filter>
     </ClInclude>
+    <ClInclude Include="NewAST.h">
+      <Filter>Файлы ресурсов</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AST.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="Lexer.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -42,6 +39,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Tokens.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="NewAST.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
