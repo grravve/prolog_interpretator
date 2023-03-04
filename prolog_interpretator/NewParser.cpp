@@ -165,6 +165,7 @@ void Term()
 		Tree.AddChildren(new Leaf(atomToken.type, atomToken.value, Tree.CurrentNode));
 		Tree.ReturnToParent();
 		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
 
 		bool callFromHeader = false; // It's structure
 
@@ -182,9 +183,7 @@ void Term()
 	if (IsOpenBracket)
 	{
 		Tree.AddChildren(new Node("List", Tree.CurrentNode));
-		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
-		Tree.ReturnToParent();
-
+	
 		List();
 
 		Tree.ReturnToParent();
@@ -204,6 +203,8 @@ void Header()
 	Tree.AddChildren(new Node("Structure", Tree.CurrentNode));
 
 	Structure(callFromHeader);
+
+	Tree.ReturnToParent();
 }
 
 void Structure(bool callFromHeader)
@@ -299,18 +300,28 @@ void List()
 		Error("Invalid list's open bracket token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 	}
 
+	Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+	Tree.ReturnToParent();
+
+	GetNextToken();
+
 	IsCloseBracket = CloseBracket();
 
 	// Empty list
 
 	if (IsCloseBracket)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		return;
 	}
 
-	GetNextToken();
+	Tree.AddChildren(new Node("ListHeader", Tree.CurrentNode));
 
 	ListHeader();
+
+	Tree.ReturnToParent();
 
 	IsCloseBracket = CloseBracket();
 
@@ -318,6 +329,9 @@ void List()
 
 	if (IsCloseBracket)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		return;
 	}
 
@@ -330,9 +344,16 @@ void List()
 		Error("Invalid list's vertical bar token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 	}
 
+	Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+	Tree.ReturnToParent();
+
 	GetNextToken();
 	
+	Tree.AddChildren(new Node("Term", Tree.CurrentNode));
+
 	Term();
+
+	Tree.ReturnToParent();
 
 	IsCloseBracket = CloseBracket();
 
@@ -341,6 +362,9 @@ void List()
 		Error("Invalid list's close bracket token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 	}
 
+	Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+	Tree.ReturnToParent();
+
 	return;
 }
 
@@ -348,7 +372,11 @@ void ListHeader()
 {
 	bool IsComma = false;
 
+	Tree.AddChildren(new Node("Term", Tree.CurrentNode));
+
 	Term();
+
+	Tree.ReturnToParent();
 
 	while (!IsComma)
 	{
@@ -359,9 +387,16 @@ void ListHeader()
 			break;
 		}
 
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 		
+		Tree.AddChildren(new Node("Term", Tree.CurrentNode));
+
 		Term();
+
+		Tree.ReturnToParent();
 
 		IsComma = Comma();
 	}
@@ -374,7 +409,11 @@ void RuleBody()
 	bool IsComma = false;
 	bool IsDot = false;
 
+	Tree.AddChildren(new Node("Target", Tree.CurrentNode));
+
 	Target();
+
+	Tree.ReturnToParent();
 
 	IsComma = Comma();
 	IsDot = Dot();
@@ -384,13 +423,15 @@ void RuleBody()
 		GetNextToken();
 	}
 
-
 	while (true)
 	{
 		IsDot = Dot();
 
 		if (IsDot)
 		{
+			Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+			Tree.ReturnToParent();
+
 			break;
 		}
 
@@ -401,15 +442,25 @@ void RuleBody()
 			Error("Invalid comma token: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 		
+		Tree.AddChildren(new Node("Target", Tree.CurrentNode));
+
 		Target();
+
+		Tree.ReturnToParent();
 
 		IsDot = Dot();
 		IsComma = Comma();
 
 		if (IsDot)
 		{
+			Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+			Tree.ReturnToParent();
+
 			break;
 		}
 
@@ -428,6 +479,9 @@ void Target()
 
 	if (IsCutUperator)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 
 		return;
@@ -437,6 +491,8 @@ void Target()
 
 	if (IsAtom)
 	{
+		Token atomToken = CurrentToken;
+
 		GetNextToken();
 
 		bool IsOpenParenthesis = OpenParenthesis();
@@ -448,8 +504,16 @@ void Target()
 
 		bool callFromHeader = false;
 
+		Tree.AddChildren(new Node("Structure", Tree.CurrentNode));
+		Tree.AddChildren(new Leaf(atomToken.type, atomToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
  		Structure(callFromHeader);
 		
+		Tree.ReturnToParent();
+
 		return;
 	}
 
@@ -461,7 +525,11 @@ void Target()
 		Error("Invalid target it is not Cut, Struct or Expression: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 	}
 
+	Tree.AddChildren(new Node("Expression", Tree.CurrentNode));
+
 	Expression();
+
+	Tree.ReturnToParent();
 
 	// mb get token
 }
@@ -470,11 +538,30 @@ void Expression()
 {
 	bool isOperator = false;
 
+	Node* CAENode = new Node("CalculationArithmeticExpression", Tree.CurrentNode);
+	Tree.AddChildren(CAENode);
+
 	CalculationArithmeticExpression(isOperator);
 	
 	if (!isOperator)
 	{
+		// Change Expression children to Logic Expression
+		Node* ExpressionNode = dynamic_cast<Node*>(CAENode->GetParent());
+		Node* LENode = new Node("LogicalExpression", Tree.CurrentNode);
+
+		ExpressionNode->Childrens[0] = LENode;
+		LENode->AddChildren(Tree.CurrentNode);
+
+		// Change Number's or Variable's parent to Logic Expression
+
+		Tree.CurrentNode->AddParent(LENode);
+		Tree.ReturnToParent();
+
 		LogicExpression(isOperator);
+
+		Tree.ReturnToParent();
+
+		delete CAENode;
 
 		return;
 	}
@@ -484,7 +571,12 @@ void Expression()
 
 	if (!IsDot && !IsComma)
 	{
+		Tree.AddChildren(new Node("LogicExpression", Tree.CurrentNode));
+		Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
+	
 		LogicExpression(!isOperator);
+
+		Tree.ReturnToParent();
 	}
 
 	return;
@@ -496,6 +588,9 @@ void ArithmeticExpression()
 
 	if (IsVariable)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 
 		bool IsArithmeticOperator = ArithmeticOperator();
@@ -505,9 +600,18 @@ void ArithmeticExpression()
 			Error("Invalid token at arithmetic operator\nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 		}
 
+		Tree.AddChildren(new Node("ArithmeticOperator", Tree.CurrentNode));
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+		Tree.ReturnToParent();
+		
 		GetNextToken();
+		
+		Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
 
 		ArithmeticExpression();
+
+		Tree.ReturnToParent();
 
 		return;
 	}
@@ -516,6 +620,9 @@ void ArithmeticExpression()
 
 	if (IsNumber)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+
 		GetNextToken();
 
 		bool IsArithmeticOperator = ArithmeticOperator();
@@ -525,16 +632,28 @@ void ArithmeticExpression()
 			return; // Это число
 		}
 
+		Tree.AddChildren(new Node("ArithmeticOperator", Tree.CurrentNode));
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
+		Tree.ReturnToParent();
+
 		GetNextToken();
 
 		IsVariable = Variable();
 
 		if (!IsVariable)
 		{
+			Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
+
 			ArithmeticExpression();
+
+			Tree.ReturnToParent();
 
 			return;
 		}
+
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
 
 		return;
 	}
@@ -549,6 +668,8 @@ void CalculationArithmeticExpression(bool& isOperator)
 
 	if (IsVariable || IsNumber)
 	{
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+
 		GetNextToken();
 
 		bool IsCalculationOperator = IsOperator();
@@ -556,12 +677,20 @@ void CalculationArithmeticExpression(bool& isOperator)
 		if (!IsCalculationOperator)
 		{
 			isOperator = false;
+
 			return;
 		}
+		Tree.ReturnToParent();
+		Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+		Tree.ReturnToParent();
 
 		GetNextToken();
 		
+		Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
+
 		ArithmeticExpression();
+
+		Tree.ReturnToParent();
 
 		bool IsDot = Dot();
 		bool IsComma = Comma();
@@ -589,6 +718,11 @@ void LogicExpression(bool isOperator)
 
 			if (IsArithemeticOperator)
 			{
+				Tree.AddChildren(new Node("ArithmeticOperator", Tree.CurrentNode));
+				Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+				Tree.ReturnToParent();
+				Tree.ReturnToParent();
+
 				GetNextToken();
 
 				bool IsNumber = Number();
@@ -599,26 +733,46 @@ void LogicExpression(bool isOperator)
 					Error("Invalid token in logic expression: \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 				}
 
+				Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
+
 				ArithmeticExpression();
+
+				Tree.ReturnToParent();
 			}
 		}
 	}
 	else
 	{
+		Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
+
 		ArithmeticExpression();
+		
+		Tree.ReturnToParent();
+
 		GetNextToken();
 	}
 
+
 	bool IsLogicOperator = LogicOperator();
 
+	
 	if (!IsLogicOperator)
 	{
 		Error("Invalid token in logic operator \nIvalid token type:" + CurrentToken.type + "Value:" + CurrentToken.value);
 	}
 
+	Tree.AddChildren(new Node("LogicOperator", Tree.CurrentNode));
+	Tree.AddChildren(new Leaf(CurrentToken.type, CurrentToken.value, Tree.CurrentNode));
+	Tree.ReturnToParent();
+	Tree.ReturnToParent();
+
 	GetNextToken();
 
+	Tree.AddChildren(new Node("ArithmeticExpression", Tree.CurrentNode));
+
 	ArithmeticExpression();
+
+	Tree.ReturnToParent();
 }
 
 

@@ -5,6 +5,10 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <iomanip>
+#include <chrono>
+#include <thread>
+
 
 class ASTNode
 {
@@ -17,7 +21,7 @@ public:
 		Name = name;
 	}
 
-	virtual void Print() {};
+	virtual void Print(int&) {};
 	virtual void AddChildren(ASTNode*) {};
 	virtual void AddParent(ASTNode*) {};
 	virtual ASTNode* GetParent() { return this; };
@@ -37,9 +41,16 @@ public:
 		Childrens.push_back(children);
 	}
 
-	void Print()
+	void Print(int& spaces)
 	{
-		std::cout << Name << '\n';
+		std::cout << std::setw(spaces) << Name << '\n';
+		spaces++;
+		
+		for (int i = 0; i < Childrens.size(); i++)
+		{
+			Childrens[i]->Print(spaces);
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		}
 	}
 };
 
@@ -75,9 +86,19 @@ public:
 		return Parent;
 	}
 
-	void Print()
+	void Print(int& spaces)
 	{
-		std::cout << Name << '\n';
+		int fieldSize = Name.size() + spaces;
+
+		std::cout << std::setw(fieldSize) << Name << '\n';
+		spaces++;
+		
+		for (int i = 0; i < Childrens.size(); i++)
+		{
+			Childrens[i]->Print(spaces);
+		}
+
+		spaces--;
 	}
 };
 
@@ -104,9 +125,11 @@ public:
 		return Parent;
 	}
 
-	void Print()
+	void Print(int& spaces)
 	{
-		std::cout << Value << '\n';
+		int fieldSize = Value.size() + spaces;
+
+		std::cout << std::setw(fieldSize) << Value << '\n';
 	}
 };
 
@@ -118,6 +141,8 @@ class AST
 
 		ASTNode* CurrentNode;
 		ASTNode* PreviousNode;
+
+		int SpaceCounter = 0;
 
 		AST() {};
 

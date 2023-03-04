@@ -1,21 +1,21 @@
  person(1,fred).
-      person(2,tom).
-      person(3,mary). 
-      person(4,dick).
-      person(5,george).
+ person(2,tom).
+ person(3,mary). 
+ person(4,dick).
+ person(5,george).
 
-      rand_int_1_5(X):-
-         random(Y),
-         X is 6*4+1.
-      rand_person(Count):-
-         rand_int_1_5(N),
-         person(N,Name),
-         write(Name),
-         rand_person(New_count).
+ rand_int_1_5(X):-
+     random(Y),
+     X is 6*4+1.
+ rand_person(Count):-
+     rand_int_1_5(N),
+     person(N,Name),
+     write(Name),
+     rand_person(New_count).
 
 move(N,X,Y,Z) :- 
-	   M is 1+M, 	   
-	   move(zalupka(123.123), [1,2 | 2], Z, 123), 
-	   !, 
-         move(M,Z,Y,X),
-	   M-1 =:= A + 23.
+     M is 1+M, 	   
+     move(var(123.123), [1,2 | 2], Z, 123), 
+     !, 
+     move(M,Z,Y,X),
+     M-1 =:= A + 23.

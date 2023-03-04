@@ -28,5 +28,5 @@ void AST::AddParent(ASTNode* node)
 
 void AST::PrintTree()
 {
-	TreeRoot->Print();
+	TreeRoot->Print(SpaceCounter);
 }
