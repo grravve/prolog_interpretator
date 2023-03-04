@@ -1,5 +1,5 @@
 move(N,X,Y,Z) :- 
-         aboba(123)>N-1, 
+         123>N-1, 
          M is aboba(123), 
          move(M,X,Z,Y), 
          move(1,X,Y,_), 

@@ -375,6 +375,21 @@ Token GetToken(std::string string)
 					tmp += ReadAtom(string, 1);
 					return CreateToken("Atom", tmp);
 				}
+
+				//=\=
+				if (CheckNextChar(string, '\\'))
+				{
+					IncreaseCurrentChar();
+
+					if (CheckNextChar(string, '='))
+					{
+						IncreaseCurrentChar();
+						IncreaseCurrentChar();
+						return CreateToken("NotEqual", "=\\=");
+					}
+
+					return CreateToken("Illigal", "error");
+				}
 				
 			}
 
@@ -413,35 +428,6 @@ Token GetToken(std::string string)
 			{
 				IncreaseCurrentChar();
 				return CreateToken("CloseBracket", "]");
-			}
-
-			case '\\':
-			{
-				// \==  ÓÒÎ×ÍÈÒÜ
-				if (CheckNextChar(string, '='))
-				{
-					IncreaseCurrentChar();
-					if (CheckNextChar(string, '='))
-					{
-						IncreaseCurrentChar();
-						IncreaseCurrentChar();
-						return CreateToken("NotEqual", "\\==");
-					}
-					else
-					{
-						std::string error = "Error char is ";
-						error += string[currentChar];
-						IncreaseCurrentChar();
-						return CreateToken("Illigal", error);
-					}
-				}
-				else
-				{
-					std::string error = "Error char is ";
-					error += string[currentChar];
-					IncreaseCurrentChar();
-					return CreateToken("Illigal", error);
-				}
 			}
 
 			case '>':
